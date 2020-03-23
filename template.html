@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Asap|Baloo+Bhaina+2&display=swap");
+* .body {
+  padding: 10px;
+  font-family: "Asap", sans-serif;
+  color: #000;
+}
+
+* .body .main {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  background-color: #ffca7a;
+  padding: 5px;
+  border-bottom: solid #000 0.1rem;
+}
+
+* .body .main h3 {
+  font-size: 1.7em;
+  margin-left: 30px;
+}
+
+* .body .main h4 {
+  font-size: 1.2em;
+  margin-left: 30px;
+}
+
+* .body .main span {
+  margin-left: 20px;
+  padding: 5px;
+  border-radius: 10px;
+}
+
+* .body .main div {
+  padding: 5px;
+  margin-top: 20px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-style: solid;
+  border-color: #ffab2d;
+  border-width: 0.1rem;
+  background: #fff2e0;
+}
+
+* .body .comment {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  background-color: #ffca7a;
+  margin-top: 20px;
+  padding-top: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom: solid #000 0.1rem;
+}
+
+* .body .comment div {
+  padding: 5px;
+}
+
+* .body .comment div span {
+  margin-left: 20px;
+  padding: 5px;
+  border-radius: 10px;
+  font-size: 0.8em;
+}
+
+* .body .comment div span + span {
+  padding-left: 20px;
+}
+
+* .body .comment div + div {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-style: solid;
+  border-color: #ffab2d;
+  border-width: 0.1rem;
+  background: #fff2e0;
+}
+
+* .body .comment-internal {
+  background-color: #e68a00;
+}
+/*# sourceMappingURL=style.css.map */
+    </style>
+</head>
+    <body>
+        <div class="body">
+            <div class="main">
+                <h3>{{ comments.0.subject }}</h3>
+                <h4>{{ comments.0.id }}</h4>
+                <span>Author: {{ comments.0.submitter }} - {{ comments.0.submitter_email }}</span><span>Assignee: {{ comments.0.assignee }} - {{ comments.0.assignee_email }}</span><!--<span>Created at: {{ created_at }}</span>-->
+                <div>{{ comments.0.description }}</div>
+            </div>
+        {% for comment in comments %}
+            {% if comment.comment_public %}
+            <div class="comment">
+            {% else %}
+            <div class="comment comment-internal">
+            {% endif %}
+                <div><span>Author: {{ comment.comment_author_id }}</span><span>Created at: {{ comment.comment_created_at }}</span></div>
+                <div>{{ comment.comment_html_body }}</div>
+            </div>
+        {% endfor %}
+        </div>
+    </body>
+</html>

@@ -1,0 +1,77 @@
+$primary: rgb(255, 171, 45);
+$text-color: #000;
+@import url('https://fonts.googleapis.com/css?family=Asap|Baloo+Bhaina+2&display=swap');
+*{
+    .body{
+        //background-color: $primary;
+        padding: 10px;
+        font-family: "Asap", sans-serif;
+        color: $text-color;
+        .main{
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            background-color: lighten($primary, 15%);
+            padding: 5px;
+            border-bottom: solid #000 0.1rem;
+            h3{
+                font-size: 1.7em;
+                margin-left: 30px;
+            }
+            h4{
+                font-size: 1.2em;
+                margin-left: 30px;
+            }
+            span{
+                margin-left: 20px;
+                padding: 5px;
+                border-radius: 10px;
+                //background-color: $primary;
+            }
+            div{
+                padding: 5px;
+                margin-top: 20px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border-style: solid;
+                border-color: $primary;
+                border-width: 0.1rem;
+                background: lighten($primary, 35%);
+            }
+        }
+        .comment{
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            background-color: lighten($primary, 15%);
+            margin-top: 20px;
+            padding-top: 5px;
+            padding-left: 5px;
+            padding-right: 5px;
+            border-bottom: solid #000 0.1rem;
+            div{
+                padding: 5px;
+                span{
+                    margin-left: 20px;
+                    padding: 5px;
+                    border-radius: 10px;
+                    font-size: 0.8em;
+                    //background-color: $primary;
+                }
+                span+span{
+                    padding-left: 20px;
+                }
+            }
+            div+div{
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                border-style: solid;
+                border-color: $primary;
+                border-width: 0.1rem;
+                background: lighten($primary, 35%);
+            }
+        }
+        .comment-internal{
+            background-color: $primary;
+
+        }
+    }
+}
