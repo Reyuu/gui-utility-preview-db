@@ -32,6 +32,7 @@ class SQLHelperClass():
         self.connection = connection
         self.cursor = self.connection.cursor()
         self.comment_table = comment_table
+        self.page_size = 50
 
         ## define SQL queries you'd need
         self.select_all = f"select * from {self.comment_table}"
@@ -42,6 +43,13 @@ class SQLHelperClass():
                                                                                                 id like ("%{pattern}%") or
                                                                                                 comment_html_body like ("%{pattern}%")
                                                                                                 )"""
+
+        self.select_distinct_matching_pattern_pagination = lambda pattern, page: f"""select DISTINCT id, subject, description from {self.comment_table} where (
+                                                                                                subject like ("%{pattern}%") or
+                                                                                                description like ("%{pattern}%") or
+                                                                                                id like ("%{pattern}%") or
+                                                                                                comment_html_body like ("%{pattern}%")
+                                                                                                ) limit {self.page_size} offset {self.page_size*page}"""
         self.select_all_by_id = lambda pattern: f"select DISTINCT * from {self.comment_table} where id = \"{pattern}\" order by comment_created_at asc"
     
     def get_all(self):
@@ -54,6 +62,10 @@ class SQLHelperClass():
 
     def get_based_on_pattern(self, pattern):
         c = self.cursor.execute(self.select_distinct_matching_pattern(pattern))
+        return c.fetchall()
+    
+    def get_based_on_pattern_by_page(self, pattern, page):
+        c = self.cursor.execute(self.select_distinct_matching_pattern_pagination(pattern, page))
         return c.fetchall()
     
     def get_all_by_id_date_asc(self, pattern):
@@ -78,9 +90,13 @@ class MainFrame ( wx.Frame ):
         ## Utilities
         self.sql = SQLHelperClass()
         self.vertical_size_grid = -1
+        self.last_query = ""
 
         ## GUI init
-        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 1035, 664 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+        wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 1200, 800 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+
+        #self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+        self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 
         self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
@@ -119,13 +135,26 @@ class MainFrame ( wx.Frame ):
 
         # Cell Defaults
         self.m_grid1.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
-        verticalbox_child.Add( self.m_grid1, 0, wx.ALL, 5 )
+        verticalbox_child.Add( self.m_grid1, 1, wx.EXPAND, 5 )
+
+        bSizer2 = wx.BoxSizer( wx.VERTICAL )
+
+        self.m_staticText1 = wx.StaticText( self, wx.ID_ANY, u"Page", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText1.Wrap( -1 )
+
+        bSizer2.Add( self.m_staticText1, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+
+        self.m_spinCtrl1 = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 0, 999, 0 )
+        bSizer2.Add( self.m_spinCtrl1, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5 )
+
+
+        verticalbox_child.Add( bSizer2, 0, wx.ALIGN_BOTTOM|wx.EXPAND, 5 )
 
 
         flexbox_parent.Add( verticalbox_child, 1, wx.EXPAND, 5 )
 
-        self.m_htmlWin1 = wx.html2.WebView.New( self, wx.ID_ANY, "about:", wx.DefaultPosition, self.DoGetBestSize(), wx.html2.WebViewBackendDefault, wx.html.HW_SCROLLBAR_AUTO )
-        flexbox_parent.Add( self.m_htmlWin1, 0, wx.ALL, 5 )
+        self.m_htmlWin1 = wx.html2.WebView.New( self, wx.ID_ANY, "about:", wx.DefaultPosition, wx.Size(2000, 2000), wx.html2.WebViewBackendDefault, wx.html.HW_SCROLLBAR_AUTO )
+        flexbox_parent.Add( self.m_htmlWin1, 0, wx.EXPAND, 5 )
         #TODO: Delete test after making sure tempalte renders correctly
         #self.m_htmlWin1.SetPage("<b>HAHA</b><br /><h2>TEST</h2>", "")
 
@@ -140,6 +169,7 @@ class MainFrame ( wx.Frame ):
         self.m_searchCtrl1.Bind( wx.EVT_TEXT_ENTER, self.get_search_results )
         self.m_searchCtrl1.Bind( wx.EVT_CHAR, self.get_search_result_keyboard)
         self.m_grid1.Bind( wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.left_click_on_cell_grid )
+        self.m_spinCtrl1.Bind( wx.EVT_SPINCTRL, self.change_pagination )
 
         # reinit grid
         self.fill_grid([("database loaded, use the searchbar", "", "")])
@@ -149,8 +179,11 @@ class MainFrame ( wx.Frame ):
 
     def fill_grid(self, grid_data):
         self.m_grid1.ClearGrid()
-        self.m_grid1.DeleteCols(0, -1)
-        self.m_grid1.DeleteRows(0, -1)
+        try:
+            self.m_grid1.DeleteCols(0, -1)
+            self.m_grid1.DeleteRows(0, -1)
+        except wx._core.wxAssertionError:
+            pass
         self.vertical_size_grid = len(grid_data)
         self.m_grid1.AppendCols(3)
         self.m_grid1.AppendRows(self.vertical_size_grid)
@@ -165,6 +198,13 @@ class MainFrame ( wx.Frame ):
         return True
 
     # Virtual event handlers, overide them in your derived class
+    def change_pagination(self, event):
+        val = self.m_searchCtrl1.GetValue()
+        data = self.sql.get_based_on_pattern_by_page(val, self.m_spinCtrl1.GetValue())
+        #print(val)
+        self.fill_grid(data)
+        event.Skip()
+
     def left_click_on_cell_grid( self, event ):
         selected_row = event.GetRow()
         id = self.m_grid1.GetCellValue(selected_row, 0)
@@ -178,18 +218,17 @@ class MainFrame ( wx.Frame ):
         event.Skip()
 
     def get_search_results( self, event ):
+        self.m_spinCtrl1.SetValue(0)
+
         val = self.m_searchCtrl1.GetValue()
-        data = self.sql.get_based_on_pattern(val)
+        data = self.sql.get_based_on_pattern_by_page(val, self.m_spinCtrl1.GetValue())
         #print(val)
         self.fill_grid(data)
         event.Skip()
 
     def get_search_result_keyboard(self, event):
         if event.GetKeyCode() == 13:
-            val = self.m_searchCtrl1.GetValue()
-            data = self.sql.get_based_on_pattern(val)
-            #print(val)
-            self.fill_grid(data)
+            self.get_search_results(event)
         event.Skip()
 
 if __name__ == "__main__":

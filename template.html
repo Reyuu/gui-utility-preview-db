@@ -101,6 +101,7 @@
             <div class="comment">
             {% else %}
             <div class="comment comment-internal">
+              <span style="font-size: 0.5em;">Private comment</span>
             {% endif %}
                 <div><span>Author: {{ comment.comment_author_id }}</span><span>Created at: {{ comment.comment_created_at }}</span></div>
                 <div>{{ comment.comment_html_body }}</div>
