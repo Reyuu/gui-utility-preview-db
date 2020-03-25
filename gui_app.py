@@ -4,10 +4,14 @@ import wx.xrc
 import wx.grid
 import wx.html
 import wx.html2
+import wx.xrc
+import wx.adv
 import sqlite3
 import random
 import jinja2
 import os
+import functools
+import time
 
 debug = True
 
@@ -84,9 +88,29 @@ class SQLHelperClass():
             comments += [dict(zip(labels, comment))]
         return comments
 
+class LoadingPanel ( wx.Panel ):
+
+	def __init__( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 50,50 ), style = wx.TAB_TRAVERSAL, name = wx.EmptyString ):
+		wx.Panel.__init__ ( self, parent, id = id, pos = pos, size = size, style = style, name = name )
+
+		bSizer4 = wx.BoxSizer( wx.VERTICAL )
+
+		self.m_animCtrl1 = wx.adv.AnimationCtrl( self, wx.ID_ANY, wx.adv.NullAnimation, wx.DefaultPosition, wx.DefaultSize, wx.adv.AC_DEFAULT_STYLE )
+		self.m_animCtrl1.LoadFile( u"./loader.gif" )
+
+		self.m_animCtrl1.Play()
+		bSizer4.Add( self.m_animCtrl1, 0, wx.ALL|wx.EXPAND, 5 )
+
+
+		self.SetSizer( bSizer4 )
+		self.Layout()
+
+	def __del__( self ):
+		pass
+
 class MainFrame ( wx.Frame ):
 
-    def __init__( self, parent ):
+    def __init__( self, parent, loading_panel=None ):
         ## Utilities
         self.sql = SQLHelperClass()
         self.vertical_size_grid = -1
@@ -94,6 +118,7 @@ class MainFrame ( wx.Frame ):
 
         ## GUI init
         wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 1200, 800 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+        self.loading_panel = LoadingPanel(self, pos=(self.GetSizeTuple()[0]/2, self.GetSizeTuple()[1]/2-50) )
 
         #self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
         self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
@@ -177,7 +202,17 @@ class MainFrame ( wx.Frame ):
     def __del__( self ):
         pass
 
+    ## decorator
+    def loading_decorator(func):
+        def wrapper_decorator(self, *args, **kwargs):
+            self.loading_panel.Show()
+            func(self, *args, **kwargs)
+            self.loading_panel.Hide()
+        return wrapper_decorator
+
+    @loading_decorator
     def fill_grid(self, grid_data):
+        #self.loading_panel.Show()
         self.m_grid1.ClearGrid()
         try:
             self.m_grid1.DeleteCols(0, -1)
@@ -195,6 +230,7 @@ class MainFrame ( wx.Frame ):
         self.m_grid1.SetColLabelValue(2, "Description")
         self.m_grid1.AutoSizeColumn(1)
         self.m_grid1.EnableDragColSize( True )
+        #self.loading_panel.Hide()
         return True
 
     # Virtual event handlers, overide them in your derived class
@@ -205,6 +241,7 @@ class MainFrame ( wx.Frame ):
         self.fill_grid(data)
         event.Skip()
 
+    @loading_decorator
     def left_click_on_cell_grid( self, event ):
         selected_row = event.GetRow()
         id = self.m_grid1.GetCellValue(selected_row, 0)
@@ -214,7 +251,9 @@ class MainFrame ( wx.Frame ):
         self.m_htmlWin1.SetPage(create_html(comments=human_readable_data), f"file:///{os.curdir}/")
         event.Skip()
 
+    @loading_decorator
     def clear_search_bar( self, event ):
+        time.sleep(5)
         event.Skip()
 
     def get_search_results( self, event ):

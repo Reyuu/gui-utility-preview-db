@@ -60,7 +60,8 @@ cur.execute("""CREATE TABLE comments
                 comment_created_at text)""")
 
 ## add dummy data
-for i in tqdm(range(5000)):
+my_values = []
+for i in tqdm(range(10000)):
     id = str(uuid.uuid4())
     subject = create_sentence(random.randint(5, 10))
     description = create_passage(5)
@@ -79,7 +80,9 @@ for i in tqdm(range(5000)):
         values = (id, subject, description, submitter, submitter_email, assignee,
                   assignee_email, collaborators, group, comment_author_id,
                   comment_html_body, comment_public, comment_created_at)
-        cur.execute("insert into comments values (?,?,?,?,?,?,?,?,?,?,?,?,?)", values)
-    conn.commit()
+        my_values += [values]
+        #cur.execute("insert into comments values (?,?,?,?,?,?,?,?,?,?,?,?,?)", values)
+cur.executemany("insert into comments values (?,?,?,?,?,?,?,?,?,?,?,?,?)", my_values)
+conn.commit()
 conn.close()
 
