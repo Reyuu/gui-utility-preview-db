@@ -22,7 +22,6 @@ debug = True
 def create_html(*args, **kwargs):
     templateloader = jinja2.FileSystemLoader(searchpath="./")
     templateEnv = jinja2.Environment(loader=templateloader)
-    #TODO: template
     TEMPLATE_FILE = "template.html"
     template = templateEnv.get_template(TEMPLATE_FILE)
     outputText = template.render(*args, **kwargs)
@@ -54,7 +53,7 @@ class SQLHelperClass():
                                                                                                 id like ("%{pattern}%") or
                                                                                                 comment_html_body like ("%{pattern}%")
                                                                                                 ) limit {self.page_size} offset {self.page_size*page}"""
-        self.select_all_by_id = lambda pattern: f"select DISTINCT * from {self.comment_table} where id = \"{pattern}\" order by comment_created_at asc"
+        self.select_all_by_id = lambda pattern: f"select * from {self.comment_table} where id = \"{pattern}\" order by comment_created_at asc"
     
     def get_all(self):
         c = self.cursor.execute(self.select_all)
@@ -90,7 +89,7 @@ class SQLHelperClass():
 
 class LoadingPanel ( wx.Panel ):
 
-	def __init__( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 50,50 ), style = wx.TAB_TRAVERSAL, name = wx.EmptyString ):
+	def __init__( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 32,50 ), style = wx.TAB_TRAVERSAL, name = wx.EmptyString ):
 		wx.Panel.__init__ ( self, parent, id = id, pos = pos, size = size, style = style, name = name )
 
 		bSizer4 = wx.BoxSizer( wx.VERTICAL )
@@ -99,7 +98,7 @@ class LoadingPanel ( wx.Panel ):
 		self.m_animCtrl1.LoadFile( u"./loader.gif" )
 
 		self.m_animCtrl1.Play()
-		bSizer4.Add( self.m_animCtrl1, 0, wx.ALL|wx.EXPAND, 5 )
+		bSizer4.Add( self.m_animCtrl1, 0, wx.EXPAND, 5 )
 
 
 		self.SetSizer( bSizer4 )
@@ -180,9 +179,6 @@ class MainFrame ( wx.Frame ):
 
         self.m_htmlWin1 = wx.html2.WebView.New( self, wx.ID_ANY, "about:", wx.DefaultPosition, wx.Size(2000, 2000), wx.html2.WebViewBackendDefault, wx.html.HW_SCROLLBAR_AUTO )
         flexbox_parent.Add( self.m_htmlWin1, 0, wx.EXPAND, 5 )
-        #TODO: Delete test after making sure tempalte renders correctly
-        #self.m_htmlWin1.SetPage("<b>HAHA</b><br /><h2>TEST</h2>", "")
-
         self.SetSizer( flexbox_parent )
         self.Layout()
 
@@ -206,8 +202,13 @@ class MainFrame ( wx.Frame ):
     def loading_decorator(func):
         def wrapper_decorator(self, *args, **kwargs):
             self.loading_panel.Show()
+            self.loading_panel.m_animCtrl1.Play()
+            self.loading_panel.Center()
+            self.loading_panel.Layout()
             func(self, *args, **kwargs)
+            self.loading_panel.m_animCtrl1.Stop()
             self.loading_panel.Hide()
+            self.Layout()
         return wrapper_decorator
 
     @loading_decorator
@@ -224,7 +225,7 @@ class MainFrame ( wx.Frame ):
         self.m_grid1.AppendRows(self.vertical_size_grid)
         for i in range(self.vertical_size_grid):
             for j in range(3):
-                self.m_grid1.SetCellValue(i, j, grid_data[i][j])
+                self.m_grid1.SetCellValue(i, j, str(grid_data[i][j]))
         self.m_grid1.SetColLabelValue(0, "ID")
         self.m_grid1.SetColLabelValue(1, "Subject")
         self.m_grid1.SetColLabelValue(2, "Description")
