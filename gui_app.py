@@ -117,7 +117,7 @@ class MainFrame ( wx.Frame ):
 
         ## GUI init
         wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 1200, 800 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-        self.loading_panel = LoadingPanel(self, pos=(self.GetSizeTuple()[0]/2, self.GetSizeTuple()[1]/2-50) )
+        self.loading_panel = LoadingPanel(self, pos=(self.GetSize()[0]/2, self.GetSize()[1]/2-50) )
 
         #self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
         self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
@@ -193,7 +193,8 @@ class MainFrame ( wx.Frame ):
         self.m_spinCtrl1.Bind( wx.EVT_SPINCTRL, self.change_pagination )
 
         # reinit grid
-        self.fill_grid([("database loaded, use the searchbar", "", "")])
+        #self.fill_grid([("database loaded, use the searchbar", "", "")])
+        self.change_pagination(None)
 
     def __del__( self ):
         pass
@@ -240,7 +241,8 @@ class MainFrame ( wx.Frame ):
         data = self.sql.get_based_on_pattern_by_page(val, self.m_spinCtrl1.GetValue())
         #print(val)
         self.fill_grid(data)
-        event.Skip()
+        if not(event is None):
+            event.Skip()
 
     @loading_decorator
     def left_click_on_cell_grid( self, event ):
