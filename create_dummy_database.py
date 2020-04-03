@@ -43,21 +43,25 @@ conn = sqlite3.connect("dummy.db")
 cur = conn.cursor()
 
 ## create table
-cur.execute("drop table comments")
+cur.execute("drop table if exists comments")
+cur.execute("drop table if exists tickets")
+cur.execute("""create table tickets
+(id integer,
+subject text,
+description text,
+submitter text,
+submitter_email text,
+assignee text,
+assignee_email,
+collaborators,
+group_ text)
+""")
 cur.execute("""CREATE TABLE comments
-                (id text,
-                subject text,
-                description text,
-                submitter text,
-                submitter_email text,
-                assignee text,
-                assignee_email text,
-                collaborators text,
-                group_ text,
-                comment_author_id text,
-                comment_html_body text,
-                comment_public integer,
-                comment_created_at text)""")
+                (id integer,
+                author_id text,
+                html_body text,
+                public integer,
+                created_at text)""")
 
 ## add dummy data
 my_values = []
@@ -71,18 +75,19 @@ for i in tqdm(range(10000)):
     assignee_email = f"{assignee}@testing-company.com"
     collaborators = ""
     group = create_name()
+    
+    ticket_values = (id, subject, description, submitter, submitter_email, assignee, assignee_email, collaborators, group)
+    cur.execute("insert into tickets values (?,?,?,?,?,?,?,?,?)", ticket_values)
+
     for j in range(random.randint(5, 10)):
         comment_author_id = str(uuid.uuid4())
         comment_html_body = create_passage(random.randint(10, 20))
         comment_public = random.randint(0, 1)
         comment_created_at = str(random_date())
 
-        values = (id, subject, description, submitter, submitter_email, assignee,
-                  assignee_email, collaborators, group, comment_author_id,
-                  comment_html_body, comment_public, comment_created_at)
-        my_values += [values]
-        #cur.execute("insert into comments values (?,?,?,?,?,?,?,?,?,?,?,?,?)", values)
-cur.executemany("insert into comments values (?,?,?,?,?,?,?,?,?,?,?,?,?)", my_values)
+        comment_values = (id, comment_author_id, comment_html_body, comment_public, comment_created_at)
+        cur.execute("insert into comments values (?,?,?,?,?)", comment_values)
+#cur.executemany("insert into comments values (?,?,?,?,?,?,?,?,?,?,?,?,?)", my_values)
 conn.commit()
 conn.close()
 

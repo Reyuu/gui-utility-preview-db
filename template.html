@@ -87,10 +87,10 @@
     <body>
         <div class="body">
             <div class="main">
-                <h3>{{ comments.0.subject }}</h3>
-                <h4>{{ comments.0.id }}</h4>
-                <span>Author: {{ comments.0.submitter }} - {{ comments.0.submitter_email }}</span><span>Assignee: {{ comments.0.assignee }} - {{ comments.0.assignee_email }}</span><!--<span>Created at: {{ created_at }}</span>-->
-                <div>{{ comments.0.description }}</div>
+                <h3>{{ ticket.subject }}</h3>
+                <h4>{{ ticket.id }}</h4>
+                <span>Author: {{ ticket.submitter }} - {{ ticket.submitter_email }}</span><span>Assignee: {{ ticket.assignee }} - {{ ticket.assignee_email }}</span><!--<span>Created at: {{ ticket.created_at }}</span>--->
+                <div>{{ ticket.description }}</div>
             </div>
         {% for comment in comments %}
             {% if comment.comment_public %}

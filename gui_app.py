@@ -31,29 +31,29 @@ def create_html(*args, **kwargs):
     return outputText
 
 class SQLHelperClass():
-    def __init__(self, connection=sqlite3.connect("dummy.db"), comment_table="comments"):
+    def __init__(self, connection=sqlite3.connect("dummy.db"), comment_table="comments", ticket_table="tickets"):
         self.connection = connection
         self.cursor = self.connection.cursor()
         self.comment_table = comment_table
+        self.ticket_table = ticket_table
         self.page_size = 50
 
         ## define SQL queries you'd need
-        self.select_all = f"select * from {self.comment_table}"
-        self.select_all_distinct = f"select DISTINCT id, subject, description from {self.comment_table}"
-        self.select_distinct_matching_pattern = lambda pattern: f"""select DISTINCT id, subject, description from {self.comment_table} where (
+        self.select_all = f"select * from {self.ticket_table}"
+        self.select_all_distinct = f"select DISTINCT id, subject, description from {self.ticket_table}"
+        self.select_distinct_matching_pattern = lambda pattern: f"""select DISTINCT id, subject, description from {self.ticket_table} where (
                                                                                                 subject like ("%{pattern}%") or
                                                                                                 description like ("%{pattern}%") or
-                                                                                                id like ("%{pattern}%") or
-                                                                                                comment_html_body like ("%{pattern}%")
+                                                                                                id like ("%{pattern}%")
                                                                                                 )"""
 
-        self.select_distinct_matching_pattern_pagination = lambda pattern, page: f"""select DISTINCT id, subject, description from {self.comment_table} where (
+        self.select_distinct_matching_pattern_pagination = lambda pattern, page: f"""select DISTINCT id, subject, description from {self.ticket_table} where (
                                                                                                 subject like ("%{pattern}%") or
                                                                                                 description like ("%{pattern}%") or
-                                                                                                id like ("%{pattern}%") or
-                                                                                                comment_html_body like ("%{pattern}%")
+                                                                                                id like ("%{pattern}%")
                                                                                                 ) limit {self.page_size} offset {self.page_size*page}"""
-        self.select_all_by_id = lambda pattern: f"select * from {self.comment_table} where id = \"{pattern}\" order by comment_created_at asc"
+        self.select_all_by_id = lambda pattern: f"select * from {self.comment_table} where id = \"{pattern}\" order by created_at asc"
+        self.select_ticket_by_id = lambda pattern: f"select * from {self.ticket_table} where id = \"{pattern}\""
     
     def get_all(self):
         c = self.cursor.execute(self.select_all)
@@ -76,16 +76,23 @@ class SQLHelperClass():
         #print(query)
         c = self.cursor.execute(query)
         return c.fetchall()
+    
+    def get_ticket_by_id(self, pattern):
+        query = self.select_ticket_by_id(pattern)
+        c = self.cursor.execute(query)
+        return c.fetchall()
 
-    def make_data_human_readable(self, data):
+    def make_data_human_readable(self, ticket_data, comment_data):
         comments = []
-        labels = ["id", "subject", "description", "submitter", "submitter_email",
-                  "assignee", "assignee_email", "collaborators", "group",
-                  "comment_author_id", "comment_html_body", "comment_public",
-                  "comment_created_at"]
-        for comment in data:
+        labels = ["id", "comment_author_id", "comment_html_body", "comment_public", "comment_created_at"]
+        for comment in comment_data:
             comments += [dict(zip(labels, comment))]
-        return comments
+
+        ticket = []
+        print(ticket_data)
+        labels = ["id", "subject", "description", "submitter", "submitter_email", "assignee", "assignee_email", "collaborators", "group"]
+        ticket = dict(zip(labels, ticket_data[0]))
+        return {"comments": comments, "ticket": ticket}
 
 class LoadingPanel ( wx.Panel ):
 
@@ -248,10 +255,11 @@ class MainFrame ( wx.Frame ):
     def left_click_on_cell_grid( self, event ):
         selected_row = event.GetRow()
         id = self.m_grid1.GetCellValue(selected_row, 0)
+        ticket_data = self.sql.get_ticket_by_id(id)
         data = self.sql.get_all_by_id_date_asc(id)
-        human_readable_data = self.sql.make_data_human_readable(data)
+        human_readable_data = self.sql.make_data_human_readable(ticket_data, data)
         #self.m_htmlWin1.SetPage(str(human_readable_data), "")
-        self.m_htmlWin1.SetPage(create_html(comments=human_readable_data), f"file:///{os.curdir}/")
+        self.m_htmlWin1.SetPage(create_html(comments=human_readable_data["comments"], ticket=human_readable_data["ticket"]), f"file:///{os.curdir}/")
         event.Skip()
 
     @loading_decorator
